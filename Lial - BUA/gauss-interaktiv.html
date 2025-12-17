@@ -1,0 +1,723 @@
+<!DOCTYPE HTML>
+<html lang="en">
+    <head>
+        <title>Gauss interaktiv</title>
+        <style>
+            html *   { font-family: Arial, Helvetica, sans-serif; }
+            textarea { width: 99%; font-family: monospace, monospace; }
+            .vtop    { vertical-align: top; }
+            .elem    { text-align: center; width: 75px; height: 20px; padding: 10px; border: 1px solid darkgray; border-radius: 5px; }
+            .oper    { text-align: center; width: 30px; height: 25px; }
+            .btn1    { text-align: center; width: 97px; height: 25px; }
+            .btn2    { text-align: center; width: 90px; height: 25px; }
+            input    { text-align: center; width: 75px; height: 20px; border: 1px solid darkgray; border-radius: 3px; }
+        </style>
+        <script>
+class NumberClass
+{
+    #Value
+    #Widget
+
+
+    constructor (value)
+    {
+        this.#Value = value
+        this.#Widget = undefined
+    }
+
+
+    #Display ()
+    {
+        let val = this.#Value
+        if (val !== Math.floor (val))
+            val = val.toFixed (7)
+        this.#Widget.innerHTML = val.toString()
+    }
+
+
+    setWidget (widget)
+    {
+        this.#Widget = widget
+        this.#Display()
+    }
+
+
+    setValue (value)
+    {
+        this.#Value = value
+        this.#Display()
+    }
+
+
+    value ()
+    {
+        return this.#Value
+    }
+
+
+    mul (factor)
+    {
+        this.setValue (factor * this.value())
+    }
+
+
+    swap (rhs)
+    {
+        let tmp = this.value()
+        this.setValue (rhs.value())
+        rhs.setValue (tmp)
+    }
+}
+class MatrixClass
+{
+    #Rows
+    #Cols
+    #Elem
+
+
+    constructor (text)
+    {
+        let m = 0, n = 0, a = []
+
+        for (const line1 of text.split (/\s*\n+\s*/))
+        {
+            const line2 = line1.trim();
+            if (line2.length > 0)
+            {
+                let b = []
+                for (const [k, str] of line2 .split (/\s+/) .entries())
+                    b [k] = new NumberClass (Number (str))
+
+                let nn = b.length
+                for (let k = nn; k < n; ++k)
+                    b [k] = new NumberClass (0)
+
+                if (nn > n)
+                {
+                    for (let i = 0; i < m; ++i)
+                        for (let k = n; k < nn; ++k)
+                            a [i] [k] = new NumberClass (0);
+                    n = nn
+                }
+
+                a [m++] = b
+            }
+        }
+
+        this.#Rows = m; this.#Cols = n; this.#Elem = a
+    }
+
+
+    rows ()
+    {
+        return this.#Rows
+    }
+
+
+    cols ()
+    {
+        return this.#Cols
+    }
+
+
+    elem (row, col)
+    {
+        return this.#Elem [row] [col] .value()
+    }
+
+
+    setElem (row, col, val)
+    {
+        this.#Elem [row] [col] .setValue (val)
+    }
+
+
+    elems ()
+    {
+        let a = []
+        for (let row = 0; row < this.#Rows; ++row)
+        {
+            let b = []
+            for (let col = 0; col < this.#Cols; ++col)
+                b [col] = this.elem (row, col)
+            a [row] = b
+        }
+        return a
+    }
+
+
+    setElems (input)
+    {
+        for (let row = 0; row < this.#Rows; ++row)
+        for (let col = 0; col < this.#Cols; ++col)
+        {
+            let val = input [row] [col]
+            if (val === undefined)
+                val = 0.0
+            this.setElem (row, col, val)
+        }
+    }
+
+
+    setElemWidget (row, col, widget)
+    {
+        this.#Elem [row] [col] .setWidget (widget)
+    }
+
+
+    #Apply (factor1, row1, func, factor2, row2)
+    {
+        for (let col = 0; col < this.#Cols; ++col)
+        {
+            let elem1 = this.#Elem [row1] [col]
+            let elem2 = this.#Elem [row2] [col]
+
+            let value1 = factor1 * elem1.value()
+            let value2 = factor2 * elem2.value()
+
+            let result = func (value1, value2)
+            elem1.setValue (result)
+        }
+    }
+
+
+    add (factor1, row1, factor2, row2)
+    {
+        this.#Apply (factor1, row1, (x, y) => x + y, factor2, row2)
+    }
+
+
+    sub (factor1, row1, factor2, row2)
+    {
+        this.#Apply (factor1, row1, (x, y) => x - y, factor2, row2)
+    }
+
+
+    mul (factor, row)
+    {
+        for (let col = 0; col < this.#Cols; ++col)
+            this.#Elem [row] [col] .mul (factor)
+    }
+
+
+    swap (row1, row2)
+    {
+        for (let col = 0; col < this.#Cols; ++col)
+            this.#Elem [row1] [col] .swap (this.#Elem [row2] [col])
+    }
+
+
+    print ()
+    {
+        for (let row = 0; row < this.#Rows; ++row)
+        {
+            let str = ""
+            for (let col = 0; col < this.#Cols; ++col)
+                str += ' ' + this .#Elem [row] [col] .value()
+        }
+    }
+}
+class FractionClass
+{
+    #Numer
+    #Denom
+
+
+    constructor ()
+    {
+        this.#Numer = 1.0
+        this.#Denom = 1.0
+    }
+
+
+    setNumerWidget (widget)
+    {
+        widget.value = 1.0
+        this.#Numer = widget
+    }
+
+
+    setDenomWidget (widget)
+    {
+        widget.value = 1.0
+        this.#Denom = widget
+    }
+
+
+    #GetAndReset (widget)
+    {
+        let val = widget.value
+        widget.value = 1.0
+        return val
+    }
+
+
+    setNumer (val)
+    {
+        this.#Numer.value = val
+    }
+
+
+    setDenom (val)
+    {
+        this.#Denom.value = val
+    }
+
+
+    factor ()
+    {
+        let numer = this.#GetAndReset (this.#Numer)
+        let denom = this.#GetAndReset (this.#Denom)
+        let factor = numer / denom
+        return Number.isFinite (factor) ? factor : 1.0
+    }
+}
+class FactorsClass
+{
+    #Fractions
+
+
+    constructor ()
+    {
+        this.#Fractions = []
+    }
+
+
+    #Fraction (row)
+    {
+        let frac = this.#Fractions [row]
+        if (frac === undefined)
+        {
+            frac = new FractionClass()
+            this.#Fractions [row] = frac
+        }
+        return frac
+    }
+
+
+    setNumerWidget (row, widget)
+    {
+        this .#Fraction (row) .setNumerWidget (widget)
+    }
+
+
+    setDenomWidget (row, widget)
+    {
+        this .#Fraction (row) .setDenomWidget (widget)
+    }
+
+
+    setNumer (row, val)
+    {
+        this.#Fractions [row] .setNumer (val)
+    }
+
+
+    setDenom (row, val)
+    {
+        this.#Fractions [row] .setDenom (val)
+    }
+
+
+    factor (row)
+    {
+        return this.#Fractions [row] .factor()
+    }
+}
+let Matrix
+let Factors
+let InputWidget
+let Backup
+let Command = ""
+let Done = []
+let Todo = []
+
+
+
+let Folie7 =
+`
+3.0   5.0   -10.0
+0.3   6.0   15.78
+`
+
+let Folie13 =
+`
+7.0   0.0    0.0   -21.0
+1.0   2.0    0.0     7.0
+1.0   3.0   -1.0    13.0
+`
+
+let Uebung1 =
+`
+ 1.0    1.0   2.0    8.0
+-1.0   -2.0   3.0    1.0
+ 3.0   -7.0   4.0   10.0
+`
+
+let Uebung2 =
+`
+ 2.0    2.0   2.0    0.0
+-2.0    5.0   2.0    1.0
+ 8.0    1.0   4.0   -1.0
+`
+
+let Uebung3 =
+`
+ 1.0   -1.0    2.0   -1.0   -1.0
+ 2.0    1.0   -2.0   -2.0   -2.0
+-1.0    2.0   -4.0    1.0    1.0
+ 3.0    0.0    0.0   -3.0   -3.0
+`
+
+let Uebung4 =
+`
+0.0   -2.0    3.0    1.0
+3.0    6.0   -3.0   -2.0
+6.0    6.0    3.0    5.0
+`
+
+let Uebung5 =
+`
+2.0   -3.0   -2.0
+2.0    1.0    1.0
+3.0    2.0    1.0
+`
+
+let Uebung6 =
+`
+ 3.0    2.0   -1.0   -15.0
+ 5.0    3.0    2.0     0.0
+ 3.0    1.0    3.0    11.0
+-6.0   -4.0    2.0    30.0
+`
+
+let Uebung7 =
+`
+ 4.0   -8.0   12.0
+ 3.0   -6.0    9.0
+-2.0    4.0   -6.0
+`
+
+let Uebung8 =
+`
+ 0.0   10.0   -4.0    1.0    1.0
+ 1.0    4.0   -1.0    1.0    2.0
+ 3.0    2.0    1.0    2.0    5.0
+-2.0   -8.0    2.0   -2.0   -4.0
+ 1.0   -6.0    3.0    0.0    1.0
+`
+
+let Uebung9 =
+`
+ 5.0    3.0    2.0   1.0   0.0   0.0
+-1.0   -1.0    1.0   0.0   1.0   0.0
+-3.0   -2.0   -1.0   0.0   0.0   1.0
+`
+
+
+
+window.onload = function ()
+{
+    InputWidget = document.getElementById ('input')
+    Generate (Folie7)
+}
+
+
+
+function GenerateFromText (text)
+{
+    Matrix = new MatrixClass (text)
+    Factors = new FactorsClass ()
+    Backup = Matrix.elems()
+    Done = []
+    Todo = []
+    CreateWidgets()
+}
+
+
+
+function Generate (text)
+{
+    InputWidget.value = text.replace (/^\s*\n/gm, '')
+    GenerateFromText (text)
+}
+
+
+
+function GenerateFromWidget ()
+{
+    let string = InputWidget.value
+    Generate (string)
+}
+
+
+
+function AppendHtml (widget, html)
+{
+    let label = document.createElement ('label')
+    label.innerHTML = html
+    widget.appendChild (label)
+}
+
+
+
+function CreateWidgets ()
+{
+    let rows = Matrix.rows()
+    let cols = Matrix.cols()
+
+    let cont = document.getElementById ('matrix-cont')
+    while (cont.firstChild)
+        cont.removeChild (cont.firstChild)
+
+    let table = document.createElement ('table')
+    for (let row = 0; row < rows; ++row)
+    {
+        let tr = document.createElement ('tr')
+
+        for (let col = 0; col < cols; ++col)
+        {
+            let td = document.createElement ('td')
+            let elem = document.createElement ('div')
+            elem.classList.add ('elem')
+            elem.setAttribute ('draggable', 'true')
+            elem.addEventListener ('dragstart', DragHandler)
+            elem.setAttribute ('data-row', row.toString())
+            elem.setAttribute ('data-col', col.toString())
+            let txt = document.createTextNode (Matrix.elem (row, col))
+            elem.appendChild (txt)
+            td.appendChild (elem)
+            tr.appendChild (td)
+            Matrix.setElemWidget (row, col, elem)
+        }
+
+        let td1 = document.createElement ('td')
+
+        AppendHtml (td1, '&nbsp;&lowast;&nbsp;&nbsp;')
+
+        let numer = document.createElement ('input')
+        numer.classList.add ('numer')
+        numer.setAttribute ('ondragover', 'DragOverHandler (event)')
+        numer.setAttribute ('ondrop', 'DropHandler (event)')
+        numer.setAttribute ('data-row', row.toString())
+        numer.value = '1'
+        Factors.setNumerWidget (row, numer)
+        td1.appendChild (numer)
+
+        AppendHtml (td1, '&nbsp;&nbsp;&sol;&nbsp;&nbsp;')
+
+        let denom = document.createElement ('input')
+        denom.classList.add ('denom')
+        denom.setAttribute ('ondragover', 'DragOverHandler (event)')
+        denom.setAttribute ('ondrop', 'DropHandler (event)')
+        denom.setAttribute ('data-row', row.toString())
+        denom.value = '1'
+        Factors.setDenomWidget (row, denom)
+        td1.appendChild (denom)
+
+        tr.appendChild (td1)
+
+        let td2 = document.createElement ('td')
+
+        AppendHtml (td2, '&nbsp;&nbsp;&nbsp;')
+        let addbtn = document.createElement ('button')
+        addbtn.classList.add ('oper')
+        addbtn.innerHTML = '&plus;&equals;'
+        addbtn.setAttribute ('onclick', 'Add (' + row + ')')
+        td2.appendChild (addbtn)
+
+        AppendHtml (td2, '&nbsp;')
+        let subbtn = document.createElement ('button')
+        subbtn.classList.add ('oper')
+        subbtn.setAttribute ('onclick', 'Sub (' + row + ')')
+        subbtn.innerHTML = '&minus;&equals;'
+        td2.appendChild (subbtn)
+
+        AppendHtml (td2, '&nbsp;')
+        let swapbtn = document.createElement ('button')
+        swapbtn.classList.add ('oper')
+        swapbtn.setAttribute ('onclick', 'Swap (' + row + ')')
+        swapbtn.innerHTML = '&harr;'
+        td2.appendChild (swapbtn)
+
+        AppendHtml (td2, '&nbsp;&nbsp;&nbsp;')
+        let argbtn = document.createElement ('button')
+        argbtn.classList.add ('oper')
+        argbtn.setAttribute ('onclick', 'Arg (' + row + ')')
+        argbtn.innerHTML = '&nbsp;'
+        td2.appendChild (argbtn)
+
+        tr.appendChild (td2)
+
+        table.appendChild (tr)
+    }
+    cont.appendChild (table)
+}
+
+
+
+function DragHandler (ev)
+{
+    let attr = ev.target.attributes
+    let row = attr .getNamedItem ("data-row") .nodeValue
+    let col = attr .getNamedItem ("data-col") .nodeValue
+    let str = row.toString() + " " + col.toString()
+    ev.dataTransfer.setData ("application/my-app", str)
+    ev.dataTransfer.effectAllowed = "copy"
+}
+
+
+
+function DragOverHandler (ev)
+{
+    ev.preventDefault()
+    ev.dataTransfer.dropEffect = "copy"
+}
+
+
+
+function DropHandler (ev)
+{
+    ev.preventDefault()
+
+    let str = ev.dataTransfer.getData ("application/my-app")
+    let idx = str.split (" ")
+    let row0 = parseInt (idx [0])
+    let col0 = parseInt (idx [1])
+    let val = Matrix.elem (row0, col0)
+
+    let attr = ev.target.attributes
+    let id = attr .getNamedItem ("class") .nodeValue
+    let row = attr .getNamedItem ("data-row") .nodeValue
+
+    if (id === "numer")
+        Factors.setNumer (row, val)
+
+    if (id === "denom")
+        Factors.setDenom (row, val)
+}
+
+
+
+function Add (row)
+{
+    Command = "add (" + Factors.factor (row) + ", "  + row
+}
+
+
+
+function Sub (row)
+{
+    Command = "sub (" + Factors.factor (row) + ", " + row
+}
+
+
+
+function Swap (row)
+{
+    Command = "swap (" + row;
+}
+
+
+
+function Eval ()
+{
+    Done.push (Command)
+    Todo = []
+    eval ("Matrix." + Command)
+    Command = ""
+}
+
+
+
+function Arg (row)
+{
+    if (Command === "")
+        Command = "mul ("
+    else
+        Command += ", "
+
+    if (! Command.startsWith ("swap"))
+        Command += Factors.factor (row) + ", "
+
+    Command += row + ")"
+
+    Eval()
+}
+
+
+
+function Undo ()
+{
+    if (Done.length > 0)
+    {
+        let cmd = Done.pop()
+        Todo.push (cmd)
+        Matrix.setElems (Backup)
+        for (let i = 0, n = Done.length; i < n; ++i)
+            eval ("Matrix." + Done [i])
+    }
+}
+
+
+
+function Redo ()
+{
+    if (Todo.length > 0)
+    {
+        let cmd = Todo.pop()
+        Done.push (cmd)
+        eval ("Matrix." + cmd)
+    }
+}
+        </script>
+    </head>
+    <body>
+        <h2>Gauss - (Jordan -) Algorithmus interaktiv</h2>
+        <table>
+            <tr>
+                <td>Vorlesung</td>
+                <td>&nbsp;</td>
+                <td><button class="btn2" onclick="Generate (Folie7)">Folie 7</button></td>
+                <td><button class="btn2" onclick="Generate (Folie13)">Folie 13</button></td>
+            </tr>
+            <tr>
+                <td>Gauss</td>
+                <td>&nbsp;</td>
+                <td><button class="btn2" onclick="Generate (Uebung1)">&Uuml;bung 1</button></td>
+                <td><button class="btn2" onclick="Generate (Uebung2)">&Uuml;bung 2</button></td>
+                <td><button class="btn2" onclick="Generate (Uebung3)">&Uuml;bung 3</button></td>
+                <td><button class="btn2" onclick="Generate (Uebung4)">&Uuml;bung 4</button></td>
+                <td><button class="btn2" onclick="Generate (Uebung5)">&Uuml;bung 5</button></td>
+                <td><button class="btn2" onclick="Generate (Uebung6)">&Uuml;bung 6</button></td>
+                <td><button class="btn2" onclick="Generate (Uebung7)">&Uuml;bung 7</button></td>
+                <td><button class="btn2" onclick="Generate (Uebung8)">&Uuml;bung 8</button></td>
+            </tr>
+            <tr>
+                <td>Gauss-Jordan</td>
+                <td>&nbsp;</td>
+                <td><button class="btn2" onclick="Generate (Uebung9)">&Uuml;bung 9</button></td>
+            </tr>
+            <tr>
+                <td>&nbsp;</td>
+            <tr>
+            <tr>
+                <td class="vtop">Benutzerdefiniert</td>
+                <td>&nbsp;</td>
+                <td class="vtop" colspan="7">
+                    <textarea id="input" rows="5"></textarea>
+                </td>
+                <td class="vtop">
+                    <button class="btn2" onclick="GenerateFromWidget()">Generieren</button>
+                </td>
+            </tr>
+        </table>
+        <h3>Interaktiv</h3>
+        <div id="matrix-cont"></div>
+        <br />
+        <table><tr>
+            <td><button class="btn1" onclick="Undo()">undo</button></td>
+            <td><button class="btn1" onclick="Redo()">redo</button></td>
+        </tr></table>
+    </body>
+</html>
