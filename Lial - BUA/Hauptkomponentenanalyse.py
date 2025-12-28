@@ -27,7 +27,7 @@ def analyse(A_tilde):
     A = M @ A_tilde
     C = A.T @ A / (m - 1)
     EW, EV = la.eig (C)
-    idx = EW.argsort()[::-1]
+    idx = np.abs(EW).argsort()[::-1]
     EW = EW[idx]
     EV = EV[:,idx]
     A @= EV
